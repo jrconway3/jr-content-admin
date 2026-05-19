@@ -16,7 +16,7 @@
 		var nextIndex  = parseInt( $repeater.attr( 'data-next-index' ), 10 ) || 0;
 		var template   = $( '#' + templateId ).html();
 
-		if ( ! template) {
+		if ( ! template ) {
 			return $();
 		}
 
@@ -84,7 +84,7 @@
 					var $previous = $row.prev( '.jr-content-admin-repeater-row' );
 					var $repeater = $( this ).closest( '.jr-content-admin-repeater' );
 
-					if ($previous.length) {
+					if ( $previous.length ) {
 						$row.insertBefore( $previous );
 						updateRepeaterIndexes( $repeater );
 					}
@@ -99,7 +99,7 @@
 					var $next     = $row.next( '.jr-content-admin-repeater-row' );
 					var $repeater = $( this ).closest( '.jr-content-admin-repeater' );
 
-					if ($next.length) {
+					if ( $next.length ) {
 						$row.insertAfter( $next );
 						updateRepeaterIndexes( $repeater );
 					}
