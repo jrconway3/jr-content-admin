@@ -36,22 +36,11 @@ function jr_content_admin_register_metaboxes() {
 		);
 	}
 
-	foreach ( jr_content_admin_post_types_with_associated_games() as $post_type ) {
+	foreach ( jr_content_admin_post_types_with_review_info() as $post_type ) {
 		add_meta_box(
-			'jr-content-admin-associated-games',
-			__( 'Associated Games', 'jr-content-admin' ),
-			'jr_content_admin_render_associated_games_metabox',
-			$post_type,
-			'normal',
-			'default'
-		);
-	}
-
-	foreach ( jr_content_admin_post_types_with_associated_characters() as $post_type ) {
-		add_meta_box(
-			'jr-content-admin-associated-characters',
-			__( 'Associated Characters', 'jr-content-admin' ),
-			'jr_content_admin_render_associated_characters_metabox',
+			'jr-content-admin-review-info',
+			__( 'Review Info', 'jr-content-admin' ),
+			'jr_content_admin_render_review_info_metabox',
 			$post_type,
 			'normal',
 			'default'
@@ -127,7 +116,7 @@ function jr_content_admin_render_ratings_row( $index, array $item ) {
 
 	echo '<div class="jr-content-admin-repeater-row" data-row-index="' . esc_attr( (string) $index ) . '">';
 	echo '<div class="jr-content-admin-grid">';
-	echo '<p><label><strong>' . esc_html__( 'Type', 'jr-content-admin' ) . '</strong></label><input class="widefat" type="text" name="jr_content_admin_ratings[' . esc_attr( (string) $index ) . '][type]" value="' . esc_attr( $type ) . '"></p>';
+	echo '<p><label><strong>' . esc_html__( 'Type', 'jr-content-admin' ) . '</strong></label><input class="widefat" type="text" list="jr-content-admin-rating-types" name="jr_content_admin_ratings[' . esc_attr( (string) $index ) . '][type]" value="' . esc_attr( $type ) . '"></p>';
 	echo '<p><label><strong>' . esc_html__( 'Rating', 'jr-content-admin' ) . '</strong></label><select class="widefat" name="jr_content_admin_ratings[' . esc_attr( (string) $index ) . '][rating]">';
 	for ( $value = 1; $value <= 10; $value++ ) {
 		echo '<option value="' . esc_attr( (string) $value ) . '"' . selected( $rating, (string) $value, false ) . '>' . esc_html( (string) $value ) . '</option>';
@@ -139,22 +128,6 @@ function jr_content_admin_render_ratings_row( $index, array $item ) {
 	echo '</div>';
 }
 
-function jr_content_admin_render_related_row( $field_name, $index, array $item, array $options, $label ) {
-	$selected_id = isset( $item['id'] ) ? (string) $item['id'] : '';
-	$description = isset( $item['description'] ) ? $item['description'] : '';
-
-	echo '<div class="jr-content-admin-repeater-row" data-row-index="' . esc_attr( (string) $index ) . '">';
-	echo '<p><label><strong>' . esc_html( $label ) . '</strong></label>';
-	echo '<select class="widefat" name="' . esc_attr( $field_name ) . '[' . esc_attr( (string) $index ) . '][id]">';
-	echo '<option value="">' . esc_html__( 'Select an item', 'jr-content-admin' ) . '</option>';
-	foreach ( $options as $option_id => $option_label ) {
-		echo '<option value="' . esc_attr( (string) $option_id ) . '"' . selected( $selected_id, (string) $option_id, false ) . '>' . esc_html( $option_label ) . '</option>';
-	}
-	echo '</select></p>';
-	echo '<p><label><strong>' . esc_html__( 'Description', 'jr-content-admin' ) . '</strong></label><textarea class="widefat" rows="4" name="' . esc_attr( $field_name ) . '[' . esc_attr( (string) $index ) . '][description]">' . esc_textarea( $description ) . '</textarea></p>';
-	jr_content_admin_render_repeater_controls();
-	echo '</div>';
-}
 
 function jr_content_admin_render_gallery_image_row( $index, array $item ) {
 	$attachment_id = '';
@@ -313,76 +286,27 @@ function jr_content_admin_render_gallery_metabox( $post ) {
 	echo '</script>';
 }
 
-function jr_content_admin_render_associated_games_metabox( $post ) {
+function jr_content_admin_render_review_info_metabox( $post ) {
 	jr_content_admin_render_nonce();
 
-	$options = array();
-	foreach ( get_posts(
-		array(
-			'numberposts' => -1,
-			'orderby'     => 'title',
-			'order'       => 'ASC',
-			'post_type'   => 'game',
-			'post_status' => array( 'draft', 'publish' ),
-		)
-	) as $item ) {
-		$options[ $item->ID ] = $item->post_title;
-	}
+	$rating    = get_post_meta( $post->ID, 'jr_review_rating', true );
+	$summary   = get_post_meta( $post->ID, 'jr_review_summary', true );
+	$genre     = get_post_meta( $post->ID, 'jr_review_genre', true );
+	$developer = get_post_meta( $post->ID, 'jr_review_developer', true );
+	$playtime  = get_post_meta( $post->ID, 'jr_review_playtime', true );
 
-	$rows = array();
-	foreach ( jr_content_admin_get_repeatable_meta_rows( $post->ID, 'associated_games' ) as $index => $row ) {
-		ob_start();
-		jr_content_admin_render_related_row( 'jr_content_admin_associated_games', $index, jr_content_admin_decode_repeatable_item( $row ), $options, __( 'Game', 'jr-content-admin' ) );
-		$rows[] = ob_get_clean();
-	}
-
-	jr_content_admin_render_repeater_wrapper(
-		__( 'Associated Games', 'jr-content-admin' ),
-		__( 'Attach game references and optional descriptions using the current legacy-compatible storage format.', 'jr-content-admin' ),
-		$rows,
-		__( 'Add Game', 'jr-content-admin' ),
-		'tmpl-jr-content-admin-associated-game'
-	);
-
-	echo '<script type="text/html" id="tmpl-jr-content-admin-associated-game">';
-	jr_content_admin_render_related_row( 'jr_content_admin_associated_games', '__INDEX__', array(), $options, __( 'Game', 'jr-content-admin' ) );
-	echo '</script>';
-}
-
-function jr_content_admin_render_associated_characters_metabox( $post ) {
-	jr_content_admin_render_nonce();
-
-	$options = array();
-	foreach ( get_posts(
-		array(
-			'numberposts' => -1,
-			'orderby'     => 'title',
-			'order'       => 'ASC',
-			'post_type'   => 'character',
-			'post_status' => array( 'draft', 'publish' ),
-		)
-	) as $item ) {
-		$options[ $item->ID ] = $item->post_title;
-	}
-
-	$rows = array();
-	foreach ( jr_content_admin_get_repeatable_meta_rows( $post->ID, 'associated_characters' ) as $index => $row ) {
-		ob_start();
-		jr_content_admin_render_related_row( 'jr_content_admin_associated_characters', $index, jr_content_admin_decode_repeatable_item( $row ), $options, __( 'Character', 'jr-content-admin' ) );
-		$rows[] = ob_get_clean();
-	}
-
-	jr_content_admin_render_repeater_wrapper(
-		__( 'Associated Characters', 'jr-content-admin' ),
-		__( 'Attach character references and optional descriptions using the current legacy-compatible storage format.', 'jr-content-admin' ),
-		$rows,
-		__( 'Add Character', 'jr-content-admin' ),
-		'tmpl-jr-content-admin-associated-character'
-	);
-
-	echo '<script type="text/html" id="tmpl-jr-content-admin-associated-character">';
-	jr_content_admin_render_related_row( 'jr_content_admin_associated_characters', '__INDEX__', array(), $options, __( 'Character', 'jr-content-admin' ) );
-	echo '</script>';
+	echo '<div class="jr-content-admin-section">';
+	echo '<p><label for="jr_review_rating"><strong>' . esc_html__( 'Rating (0–10)', 'jr-content-admin' ) . '</strong></label></p>';
+	echo '<input class="widefat" type="number" min="0" max="10" step="0.1" id="jr_review_rating" name="jr_review_rating" value="' . esc_attr( '' !== $rating ? (string) $rating : '' ) . '">';
+	echo '<p><label for="jr_review_summary"><strong>' . esc_html__( 'Summary', 'jr-content-admin' ) . '</strong></label></p>';
+	echo '<textarea class="widefat" rows="4" id="jr_review_summary" name="jr_review_summary">' . esc_textarea( $summary ) . '</textarea>';
+	echo '<p><label for="jr_review_genre"><strong>' . esc_html__( 'Genre', 'jr-content-admin' ) . '</strong></label></p>';
+	echo '<input class="widefat" type="text" id="jr_review_genre" name="jr_review_genre" value="' . esc_attr( $genre ) . '">';
+	echo '<p><label for="jr_review_developer"><strong>' . esc_html__( 'Developer', 'jr-content-admin' ) . '</strong></label></p>';
+	echo '<input class="widefat" type="text" id="jr_review_developer" name="jr_review_developer" value="' . esc_attr( $developer ) . '">';
+	echo '<p><label for="jr_review_playtime"><strong>' . esc_html__( 'Play Time', 'jr-content-admin' ) . '</strong></label></p>';
+	echo '<input class="widefat" type="text" id="jr_review_playtime" name="jr_review_playtime" value="' . esc_attr( $playtime ) . '">';
+	echo '</div>';
 }
 
 function jr_content_admin_render_ratings_metabox( $post ) {
@@ -406,4 +330,10 @@ function jr_content_admin_render_ratings_metabox( $post ) {
 	echo '<script type="text/html" id="tmpl-jr-content-admin-rating">';
 	jr_content_admin_render_ratings_row( '__INDEX__', array( 'rating' => '1' ) );
 	echo '</script>';
+
+	echo '<datalist id="jr-content-admin-rating-types">';
+	foreach ( array( 'Overall', 'Gameplay', 'Story', 'Graphics', 'Sound', 'Music', 'Performance', 'Replayability', 'Value' ) as $type_option ) {
+		echo '<option value="' . esc_attr( $type_option ) . '">';
+	}
+	echo '</datalist>';
 }

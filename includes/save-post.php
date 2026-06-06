@@ -31,7 +31,7 @@ function jr_content_admin_save_post( $post_id, $post ) {
 
 	jr_content_admin_save_post_page_fields( $post_id, $post->post_type );
 	jr_content_admin_save_gallery_fields( $post_id, $post->post_type );
-	jr_content_admin_save_associated_fields( $post_id, $post->post_type );
+	jr_content_admin_save_review_info( $post_id, $post->post_type );
 	jr_content_admin_save_ratings( $post_id, $post->post_type );
 }
 
@@ -143,68 +143,28 @@ function jr_content_admin_save_gallery_fields( $post_id, $post_type ) {
 	jr_content_admin_replace_repeatable_meta( $post_id, 'gallery_videos', $video_values );
 }
 
-function jr_content_admin_save_associated_fields( $post_id, $post_type ) {
-	if ( in_array( $post_type, jr_content_admin_post_types_with_associated_games(), true ) ) {
-		// phpcs:disable WordPress.Security.NonceVerification.Missing -- nonce verified in jr_content_admin_save_post().
-		$game_rows = isset( $_POST['jr_content_admin_associated_games'] ) && is_array( $_POST['jr_content_admin_associated_games'] )
-			? wp_unslash( $_POST['jr_content_admin_associated_games'] )
-			: array();
-		// phpcs:enable WordPress.Security.NonceVerification.Missing
-		$game_values = array();
-
-		foreach ( $game_rows as $row ) {
-			if ( ! is_array( $row ) ) {
-				continue;
-			}
-
-			$id          = isset( $row['id'] ) ? absint( $row['id'] ) : 0;
-			$description = isset( $row['description'] ) ? sanitize_textarea_field( $row['description'] ) : '';
-
-			if ( $id <= 0 ) {
-				continue;
-			}
-
-			$game_values[] = jr_content_admin_encode_item(
-				array(
-					'id'          => (string) $id,
-					'description' => $description,
-				)
-			);
-		}
-
-		jr_content_admin_replace_repeatable_meta( $post_id, 'associated_games', $game_values );
+function jr_content_admin_save_review_info( $post_id, $post_type ) {
+	if ( ! in_array( $post_type, jr_content_admin_post_types_with_review_info(), true ) ) {
+		return;
 	}
 
-	if ( in_array( $post_type, jr_content_admin_post_types_with_associated_characters(), true ) ) {
-		// phpcs:disable WordPress.Security.NonceVerification.Missing -- nonce verified in jr_content_admin_save_post().
-		$character_rows = isset( $_POST['jr_content_admin_associated_characters'] ) && is_array( $_POST['jr_content_admin_associated_characters'] )
-			? wp_unslash( $_POST['jr_content_admin_associated_characters'] )
-			: array();
-		// phpcs:enable WordPress.Security.NonceVerification.Missing
-		$character_values = array();
+	// phpcs:disable WordPress.Security.NonceVerification.Missing -- nonce verified in jr_content_admin_save_post().
+	$rating    = isset( $_POST['jr_review_rating'] ) ? jr_content_core_sanitize_rating( wp_unslash( $_POST['jr_review_rating'] ) ) : null;
+	$summary   = isset( $_POST['jr_review_summary'] ) ? sanitize_textarea_field( wp_unslash( $_POST['jr_review_summary'] ) ) : '';
+	$genre     = isset( $_POST['jr_review_genre'] ) ? jr_content_core_sanitize_string( wp_unslash( $_POST['jr_review_genre'] ) ) : '';
+	$developer = isset( $_POST['jr_review_developer'] ) ? jr_content_core_sanitize_string( wp_unslash( $_POST['jr_review_developer'] ) ) : '';
+	$playtime  = isset( $_POST['jr_review_playtime'] ) ? jr_content_core_sanitize_string( wp_unslash( $_POST['jr_review_playtime'] ) ) : '';
+	// phpcs:enable WordPress.Security.NonceVerification.Missing
 
-		foreach ( $character_rows as $row ) {
-			if ( ! is_array( $row ) ) {
-				continue;
-			}
-
-			$id          = isset( $row['id'] ) ? absint( $row['id'] ) : 0;
-			$description = isset( $row['description'] ) ? sanitize_textarea_field( $row['description'] ) : '';
-
-			if ( $id <= 0 ) {
-				continue;
-			}
-
-			$character_values[] = jr_content_admin_encode_item(
-				array(
-					'id'          => (string) $id,
-					'description' => $description,
-				)
-			);
-		}
-
-		jr_content_admin_replace_repeatable_meta( $post_id, 'associated_characters', $character_values );
+	if ( null !== $rating ) {
+		update_post_meta( $post_id, 'jr_review_rating', $rating );
+	} else {
+		delete_post_meta( $post_id, 'jr_review_rating' );
 	}
+	update_post_meta( $post_id, 'jr_review_summary', $summary );
+	update_post_meta( $post_id, 'jr_review_genre', $genre );
+	update_post_meta( $post_id, 'jr_review_developer', $developer );
+	update_post_meta( $post_id, 'jr_review_playtime', $playtime );
 }
 
 function jr_content_admin_save_ratings( $post_id, $post_type ) {
