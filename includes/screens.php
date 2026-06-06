@@ -5,7 +5,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 function jr_content_admin_supported_post_types() {
-	return array( 'post', 'page', 'portfolio', 'game', 'character', 'review' );
+	return array( 'post', 'page', 'review' );
 }
 
 function jr_content_admin_post_types_with_video_options() {
@@ -13,15 +13,11 @@ function jr_content_admin_post_types_with_video_options() {
 }
 
 function jr_content_admin_post_types_with_gallery() {
-	return array( 'post', 'page', 'character', 'game', 'review' );
-}
-
-function jr_content_admin_post_types_with_associated_games() {
 	return array( 'post', 'page', 'review' );
 }
 
-function jr_content_admin_post_types_with_associated_characters() {
-	return array( 'post', 'game', 'review' );
+function jr_content_admin_post_types_with_review_info() {
+	return array( 'review' );
 }
 
 function jr_content_admin_post_types_with_ratings() {
